@@ -32,13 +32,14 @@ Welcome to the University of Waterloo Quantitative Analysis Stocks Club Backtest
     pip install -r requirements.txt
     ```
 
+
 ### Usage
 
 1. Prepare your historical data in the required format.
-2. Implement your trading strategy in the `strategies` directory.
-3. Run the backtesting script:
-    ```bash
-    python backtest.py
+2. The current application runs on data in csv format and uses streamlit.
+3. Run the application:
+    ```python
+    streamlit run main.py
     ```
 
 

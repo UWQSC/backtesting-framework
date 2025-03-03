@@ -4,13 +4,14 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-df = pd.read_csv('data/hackathon_sample_v2.csv')
+
+#Loading parquet data file (converted from CSV)
+@st.cache_data
+def load_data():
+    return pd.read_parquet('data/hackathon_sample_v2.parquet')
+df = load_data()
 
 st.write("Top 1000 stocks on NASDAQ")
-
-
-
-#company_names = df['Company'].unique()
 
 option = st.selectbox('Select a Company: ', df['comp_name'].unique())
 'You selected: ' , option

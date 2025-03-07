@@ -1,2 +1,6 @@
+venv
+dist
+uwqsc_backtesting_framework.egg-info
+
 data/hackathon_sample_v2.csv
 data/*.parquet

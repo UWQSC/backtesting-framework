@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "uwqsc-backtesting-framework"
+version = "2025.3.7"
+dependencies = [
+    "streamlit==1.43.0",
+    "uwqsc-algorithmic-trading==2025.3.7.post2"
+]
+authors = [
+    { name="Sargun Singh Bhatti", email="sargunbhatti27@gmail.com" },
+    { name="Param Shah", email="paramshah07@gmail.com" },
+    { name="Raghav Bhasin", email="raghav9909@gmail.com" }
+]
+description = "The University of Waterloo quantitative analysis stocks club backtesting framework repository."
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "License :: OSI Approved :: MIT License",
+]
+
+[tool.setuptools.packages.find]
+include = ["uwqsc_backtesting_framework*"]
+exclude = ["uwqsc_backtesting_framework.tests*"] 
+
+[project.urls]
+Homepage = "https://github.com/UWQSC/backtesting-framework"

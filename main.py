@@ -26,19 +26,33 @@ month_option_start = st.selectbox('Start Month: ', list(range(1, 13)))
 yr_option_end = st.selectbox('End Year: ', df_company['year'].unique())
 month_option_end = st.selectbox('End Month: ', list(range(1, 13)))
 
-if yr_option_start is None or yr_option_start is None:
+#Conditional checks based on time period selection
+if yr_option_start is None or yr_option_end is None:
     st.write("Please choose a year for both the start and end")
+    st.stop()
 elif month_option_start is None or month_option_end is None:
     st.write("Please choose a month for both the start and end")
+    st.stop()
 elif (yr_option_start, month_option_start) > (yr_option_end, month_option_end):
     st.write("Please choose an earlier starting year/month or a later ending year/month")
+    st.stop()
 
-df_company_mth = df_company[
-    (df_company["year"] >= yr_option_start) & 
-    (df_company["year"] <= yr_option_end) &
-    (df_company["month"] >= month_option_start) & 
-    (df_company["month"] <= month_option_end)
-].copy()
+#Creating filtered dataframe to work with
+elif yr_option_start == yr_option_end:
+    df_company_mth = df_company[
+        (df_company["year"] == yr_option_start) & 
+        (df_company["month"] >= month_option_start) & 
+        (df_company["month"] <= month_option_end)
+    ].copy()
+else:
+    df_company_mth = df_company[
+        (
+            ((df_company["year"] == yr_option_start) & (df_company["month"] >= month_option_start)) |
+            ((df_company["year"] > yr_option_start) & (df_company["year"] < yr_option_end)) |
+            ((df_company["year"] == yr_option_end) & (df_company["month"] <= month_option_end))
+        )
+    ].copy()
+
 df_company_mth["month_year"] = df_company_mth["date"].dt.to_period("M").dt.to_timestamp()
 
 tab1, tab2 = st.tabs(["Stock Price Evolution", "Portfolio Simulation"])

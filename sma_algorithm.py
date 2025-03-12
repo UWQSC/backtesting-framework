@@ -80,15 +80,23 @@ class SimpleMovingAverageImpl:
         portfolio = portfolio.sort_index()
         portfolio["capital"] = float(capital)
         
+        # Generate trading signals
+        self.generate_signals()
+
+        # Precompute grouped data
+        grouped_data_by_date = {date: df for date, df in self.__data__.groupby("date")}
+
         for i, date in enumerate(portfolio.index):
-            # Generate trading signals
-            self.generate_signals()
-            
             if i > 0:
                 portfolio.loc[date, "capital"] = float(portfolio.loc[portfolio.index[i - 1], "capital"])
 
+            month_data = grouped_data_by_date.get(date, pd.DataFrame())
+
+            if month_data.empty:
+                continue
+
             for ticker in self.tickers:
-                ticker_data = self.__data__[(self.__data__["stock_ticker"] == ticker) & (self.__data__["date"] == date)]
+                ticker_data = month_data[month_data["stock_ticker"] == ticker]
                 if ticker_data.empty:
                     continue
 

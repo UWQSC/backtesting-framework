@@ -1,6 +1,5 @@
 venv
-dist
-uwqsc_backtesting_framework.egg-info
+__pycache__
 
 data/hackathon_sample_v2.csv
 data/*.parquet

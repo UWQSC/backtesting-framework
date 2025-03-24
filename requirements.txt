@@ -3,4 +3,4 @@ pandas==2.0.3
 numpy==1.26.4
 matplotlib==3.7.0
 seaborn==0.13.2
-uwqsc-algorithmic-trading==2025.3.7.post2
+uwqsc-algorithmic-trading==2025.3.23

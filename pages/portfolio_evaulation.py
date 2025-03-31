@@ -3,7 +3,9 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sma_algorithm import SimpleMovingAverageImpl
+
+from uwqsc_algorithmic_trading.src.algorithms.simple_moving_average_impl import SimpleMovingAverageImpl
+from uwqsc_algorithmic_trading.interfaces.algorithms.algorithm_interface import IAlgorithm
 
 
 #Loading parquet data file (converted from CSV)
@@ -56,8 +58,8 @@ else:
 
 df_company_mth["month_year"] = df_company_mth["date"].dt.to_period("M").dt.to_timestamp()
 
-# tab1, tab2 = st.tabs(["Stock Price Evolution", "Portfolio Simulation"])
 st.write("Portfolio Simulation with Your Own Custom Trading Strategy!")
+
 if df_company_mth.empty:
     st.warning("No stock data available for the selected date range.")
 else:
@@ -65,48 +67,15 @@ else:
     strat = st.selectbox('Select your strategy for backtesting: ', strat_list)
 
     if strat == "SMA":
-        df_sma = df[["stock_ticker", "date", "year", "month", "prc"]].copy()
-        
-        #Dropdown for selecting the stock ticker
-        available_tickers = sorted(df_sma["stock_ticker"].dropna().unique())
-        selected_tickers = st.multiselect("Select Tickers for Testing:", available_tickers)
+        selected_ticker = df_company["stock_ticker"].iloc[0]
+        selected_tickers = [selected_ticker]
 
-        df_sma = df_sma.loc[df_sma["stock_ticker"].isin(selected_tickers)]
-        df_sma['date'] = pd.to_datetime(df_sma['date'].astype(str), format='%Y%m%d')
+        df_sma = df_company_mth[["date", "prc"]].copy()
+        df_sma["stock_ticker"] = selected_ticker
 
-        #Dropdowns for year and month selections
-        st.write("Select your desired timeframe:")
-        start_yr = st.selectbox('Starting Year: ', df_sma['year'].unique())
-        start_mth = st.selectbox('Starting Month: ', list(range(1, 13)))
-        end_yr = st.selectbox('Ending Year: ', df_sma['year'].unique())
-        end_mth = st.selectbox('Ending Month: ', list(range(1, 13)))
-
-        # Conditional checks for selected timeframe
-        if start_yr is None or end_yr is None:
-            st.warning("Please choose a year for both the start and end")
-            st.stop()
-        elif start_mth is None or end_mth is None:
-            st.warning("Please choose a month for both the start and end")
-            st.stop()
-        elif (start_yr, start_mth) > (end_yr, end_mth):
-            st.warning("Please choose an earlier starting year/month or a later ending year/month")
-            st.stop()
-
-        #Creating filtered dataframe to work with
-        elif start_yr == end_yr:
-            df_sma = df_sma[
-                (df_sma["year"] == start_yr) & 
-                (df_sma["month"] >= start_mth) & 
-                (df_sma["month"] <= end_mth)
-            ]
-        else:
-            df_sma = df_sma[
-                (
-                    ((df_sma["year"] == start_yr) & (df_sma["month"] >= start_mth)) |
-                    ((df_sma["year"] > start_yr) & (df_sma["year"] < end_yr)) |
-                    ((df_sma["year"] == end_yr) & (df_sma["month"] <= end_mth))
-                )
-            ]
+        #Obtaining start/end dates from selected range
+        start_date = df_company_mth["date"].min()
+        end_date = df_company_mth["date"].max()
 
         initial_capital = st.number_input("Initial Capital ($)", min_value=1000, value=1_000_000, step=1000)
 
@@ -115,24 +84,36 @@ else:
         long_window = st.slider("SMA Long Window (Months)", min_value=3, max_value=24, value=6)
 
         #Run SMA backtest
-        if st.button("Run SMA Backtest") and selected_tickers:
-            st.write(f"Running SMA Strategy for: {', '.join(selected_tickers)}")
+        if st.button("Run SMA Backtest"):
+            st.write(f"Running SMA Strategy for: {selected_ticker}")
 
-            sma_algo = SimpleMovingAverageImpl(
+            df_pivot = df_sma.pivot(index="date", columns="stock_ticker", values="prc")
+            df_pivot.columns = [f"{ticker}_price" for ticker in df_pivot.columns]
+            df_pivot.sort_index(inplace=True)
+
+            strategy: IAlgorithm = SimpleMovingAverageImpl(
                 tickers=selected_tickers,
-                data=df_sma,
                 parameters={"position_size": 0.1, "short_window": short_window, "long_window": long_window}
             )
 
-            sma_portfolio = sma_algo.execute_trades(capital=initial_capital)
-            metrics = sma_algo.calculate_metrics(sma_portfolio)
+            capital = initial_capital
+            portfolio = []
 
-            st.subheader("SMA Portfolio Performance Metrics")
-            for key, value in metrics.items():
-                st.write(f"**{key}:** {value}")
+            for date, row in df_pivot.iterrows():
+                current_data = pd.DataFrame([row])
+                trades = strategy.execute_trade(capital, current_data)
+                for ticker, change in trades.items():
+                    capital += change
+                portfolio.append((date, capital))
+
+            # Display results
+            portfolio_df = pd.DataFrame(portfolio, columns=["Date", "Capital"])
+            portfolio_df.set_index("Date", inplace=True)
 
             st.subheader("Portfolio Value Over Time")
-            st.line_chart(sma_portfolio["capital"])
+            st.line_chart(portfolio_df["Capital"])
+            st.subheader("Final Capital")
+            st.write(f"${capital:,.2f}")
 
     else:
         st.write("Your current company selection is ", company_name)
